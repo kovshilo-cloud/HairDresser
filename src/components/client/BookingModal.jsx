@@ -1,0 +1,76 @@
+import { useState } from 'react'
+import { format } from 'date-fns'
+import { supabase } from '../../lib/supabaseClient'
+import Modal from '../shared/Modal'
+import Button from '../shared/Button'
+import Input from '../shared/Input'
+import BookingConfirmation from './BookingConfirmation'
+
+export default function BookingModal({ slot, onClose }) {
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [cancelToken, setCancelToken] = useState(null)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setError('')
+    if (!name.trim() || !phone.trim()) {
+      setError('Please fill in all fields.')
+      return
+    }
+    setLoading(true)
+    const { data, error: err } = await supabase
+      .from('bookings')
+      .insert({ slot_id: slot.id, client_name: name.trim(), client_phone: phone.trim() })
+      .select('cancel_token')
+      .single()
+    setLoading(false)
+    if (err) {
+      setError('Could not book this slot. It may have just been taken.')
+      return
+    }
+    setCancelToken(data.cancel_token)
+  }
+
+  if (cancelToken) {
+    return (
+      <Modal onClose={onClose}>
+        <BookingConfirmation slot={slot} cancelToken={cancelToken} onClose={onClose} />
+      </Modal>
+    )
+  }
+
+  return (
+    <Modal onClose={onClose}>
+      <h2 className="text-lg font-semibold text-gray-800 mb-1">Book appointment</h2>
+      <p className="text-sm text-gray-500 mb-4">
+        {format(new Date(slot.slot_time), 'EEEE, MMMM d')} &middot;{' '}
+        {format(new Date(slot.slot_time), 'h:mm a')} ({slot.duration} min)
+      </p>
+
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <Input
+          label="Your name"
+          placeholder="Anna Cohen"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          required
+        />
+        <Input
+          label="Phone number"
+          type="tel"
+          placeholder="050-000-0000"
+          value={phone}
+          onChange={e => setPhone(e.target.value)}
+          required
+        />
+        {error && <p className="text-sm text-red-500">{error}</p>}
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? 'Booking…' : 'Confirm booking'}
+        </Button>
+      </form>
+    </Modal>
+  )
+}
