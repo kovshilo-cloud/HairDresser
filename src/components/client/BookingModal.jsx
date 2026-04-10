@@ -18,7 +18,7 @@ export default function BookingModal({ slot, onClose }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    if (!name.trim() || !phone.trim()) {
+    if (!name.trim() || !phone.trim() || !email.trim()) {
       setError('Please fill in all fields.')
       return
     }
@@ -34,29 +34,31 @@ export default function BookingModal({ slot, onClose }) {
       return
     }
 
-    // Send confirmation email if provided
-    if (email.trim()) {
-      try {
-        const res = await fetch('/api/send-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: email.trim(),
-            clientName: name.trim(),
-            slotTime: slot.slot_time,
-            duration: slot.duration,
-            cancelToken: data.cancel_token,
-          }),
-        })
-        const text = await res.text()
-        if (!res.ok) {
-          let msg = text
-          try { msg = JSON.parse(text).error || text } catch {}
-          setEmailError(`Email error: ${msg}`)
-        }
-      } catch (e) {
-        setEmailError(`Email error: ${e.message}`)
+    // Format date/time in the browser so timezone is correct
+    const formattedDate = format(new Date(slot.slot_time), 'EEEE, MMMM d, yyyy')
+    const formattedTime = format(new Date(slot.slot_time), 'h:mm a')
+
+    try {
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: email.trim(),
+          clientName: name.trim(),
+          formattedDate,
+          formattedTime,
+          duration: slot.duration,
+          cancelToken: data.cancel_token,
+        }),
+      })
+      const text = await res.text()
+      if (!res.ok) {
+        let msg = text
+        try { msg = JSON.parse(text).error || text } catch {}
+        setEmailError(`Email error: ${msg}`)
       }
+    } catch (e) {
+      setEmailError(`Email error: ${e.message}`)
     }
 
     setLoading(false)
@@ -71,7 +73,7 @@ export default function BookingModal({ slot, onClose }) {
             {emailError}
           </div>
         )}
-        <BookingConfirmation slot={slot} cancelToken={cancelToken} onClose={onClose} />
+        <BookingConfirmation slot={slot} onClose={onClose} />
       </Modal>
     )
   }
@@ -101,11 +103,12 @@ export default function BookingModal({ slot, onClose }) {
           required
         />
         <Input
-          label="Email (optional)"
+          label="Email"
           type="email"
           placeholder="anna@example.com"
           value={email}
           onChange={e => setEmail(e.target.value)}
+          required
         />
         {error && <p className="text-sm text-red-500">{error}</p>}
         <Button type="submit" className="w-full" disabled={loading}>

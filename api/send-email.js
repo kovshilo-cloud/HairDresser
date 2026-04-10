@@ -1,22 +1,14 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
 
-  const { to, clientName, slotTime, duration, cancelToken } = req.body ?? {}
+  const { to, clientName, formattedDate, formattedTime, duration, cancelToken } = req.body ?? {}
 
-  if (!to || !clientName || !slotTime || !cancelToken) {
+  if (!to || !clientName || !formattedDate || !formattedTime || !cancelToken) {
     return res.status(400).json({ error: 'Missing required fields' })
   }
 
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) return res.status(500).json({ error: 'RESEND_API_KEY not set' })
-
-  const date = new Date(slotTime)
-  const formattedDate = date.toLocaleDateString('en-US', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-  })
-  const formattedTime = date.toLocaleTimeString('en-US', {
-    hour: 'numeric', minute: '2-digit',
-  })
 
   const origin = req.headers.origin || `https://${req.headers.host}`
   const cancelUrl = `${origin}?token=${cancelToken}`
