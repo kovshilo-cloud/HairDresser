@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from './lib/supabaseClient'
 import ClientPage from './pages/ClientPage'
 import AdminPage from './pages/AdminPage'
 import CancelPage from './pages/CancelPage'
@@ -22,7 +23,18 @@ function Header({ isAdmin, onAdminToggle }) {
   )
 }
 
+function deleteExpiredSlots() {
+  const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+  return supabase.from('slots').delete().lt('slot_time', cutoff)
+}
+
 export default function App() {
+  useEffect(() => {
+    deleteExpiredSlots()
+    const interval = setInterval(deleteExpiredSlots, 60_000)
+    return () => clearInterval(interval)
+  }, [])
+
   const params = new URLSearchParams(window.location.search)
   const token = params.get('token')
 

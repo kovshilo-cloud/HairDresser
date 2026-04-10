@@ -91,7 +91,7 @@ export default function AdminSlotList({ refreshKey }) {
               return (
                 <tr
                   key={slot.id}
-                  className={`cursor-pointer ${isSelected ? 'bg-rose-50' : 'hover:bg-gray-50'}`}
+                  className={`cursor-pointer ${isSelected ? 'bg-rose-50' : status === 'booked' ? 'bg-gray-50' : 'hover:bg-gray-50'}`}
                   onClick={() => toggleOne(slot.id)}
                 >
                   <td className="px-4 py-3 text-center">

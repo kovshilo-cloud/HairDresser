@@ -7,10 +7,15 @@ export function useSlots() {
 
   const fetchSlots = useCallback(async () => {
     const { data } = await supabase
-      .from('available_slots')
-      .select('*')
+      .from('slots')
+      .select('*, bookings(id, cancelled_at)')
+      .eq('is_published', true)
       .order('slot_time', { ascending: true })
-    setSlots(data ?? [])
+    const slotsWithStatus = (data ?? []).map(slot => ({
+      ...slot,
+      isBooked: slot.bookings?.some(b => !b.cancelled_at) ?? false,
+    }))
+    setSlots(slotsWithStatus)
     setLoading(false)
   }, [])
 
