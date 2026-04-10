@@ -39,7 +39,7 @@ function Header({ view, setView }) {
                 </button>
               )}
               <button
-                onClick={() => { sessionStorage.removeItem('admin'); setView('client') }}
+                onClick={() => { localStorage.removeItem('admin'); setView('client') }}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 ← Client view
@@ -57,7 +57,7 @@ export default function App() {
   const token = params.get('token')
 
   const [view, setView] = useState(
-    params.get('admin') !== null || sessionStorage.getItem('admin') === '1' ? 'admin' : 'client'
+    params.get('admin') !== null || localStorage.getItem('admin') === '1' ? 'admin' : 'client'
   )
 
   // Cancel flow — standalone page, no nav needed

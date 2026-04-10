@@ -9,7 +9,7 @@ export default function AdminLogin({ onLogin }) {
   function handleSubmit(e) {
     e.preventDefault()
     if (password === import.meta.env.VITE_ADMIN_PASSWORD) {
-      sessionStorage.setItem('admin', '1')
+      localStorage.setItem('admin', '1')
       onLogin()
     } else {
       setError('Incorrect password.')
