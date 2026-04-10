@@ -59,6 +59,12 @@ export default function App() {
   const [view, setView] = useState(
     params.get('admin') !== null || localStorage.getItem('admin') === '1' ? 'admin' : 'client'
   )
+  const [authed, setAuthed] = useState(localStorage.getItem('admin') === '1')
+
+  function handleLogin() {
+    localStorage.setItem('admin', '1')
+    setAuthed(true)
+  }
 
   // Cancel flow — standalone page, no nav needed
   if (token) {
@@ -79,7 +85,7 @@ export default function App() {
     <div className="min-h-screen bg-gray-50">
       <Header view={view} setView={setView} />
       <main className="max-w-3xl mx-auto px-4 py-8">
-        {view === 'admin'   && <AdminPage />}
+        {view === 'admin'   && <AdminPage authed={authed} onLogin={handleLogin} />}
         {view === 'archive' && <ArchivePage />}
         {view === 'client'  && <ClientPage />}
       </main>
