@@ -39,7 +39,7 @@ function Header({ view, setView }) {
                 </button>
               )}
               <button
-                onClick={() => { localStorage.removeItem('admin'); setView('client') }}
+                onClick={() => setView('client')}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 ← Client view
