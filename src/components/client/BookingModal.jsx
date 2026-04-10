@@ -12,6 +12,7 @@ export default function BookingModal({ slot, onClose }) {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [emailError, setEmailError] = useState('')
   const [cancelToken, setCancelToken] = useState(null)
 
   async function handleSubmit(e) {
@@ -48,9 +49,9 @@ export default function BookingModal({ slot, onClose }) {
           }),
         })
         const json = await res.json()
-        if (!res.ok) console.error('Email API error:', json)
+        if (!res.ok) setEmailError(`Email error: ${json.error || res.status}`)
       } catch (e) {
-        console.error('Email fetch failed:', e)
+        setEmailError(`Email error: ${e.message}`)
       }
     }
 
@@ -61,6 +62,11 @@ export default function BookingModal({ slot, onClose }) {
   if (cancelToken) {
     return (
       <Modal onClose={onClose}>
+        {emailError && (
+          <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">
+            {emailError}
+          </div>
+        )}
         <BookingConfirmation slot={slot} cancelToken={cancelToken} onClose={onClose} />
       </Modal>
     )
