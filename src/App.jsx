@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
-import { supabase } from './lib/supabaseClient'
+import { useState } from 'react'
 import ClientPage from './pages/ClientPage'
 import AdminPage from './pages/AdminPage'
 import CancelPage from './pages/CancelPage'
+import ArchivePage from './pages/ArchivePage'
 
-function Header({ isAdmin, onAdminToggle }) {
+function Header({ view, setView }) {
   return (
     <header className="bg-white border-b border-gray-100 sticky top-0 z-40">
       <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -12,31 +12,53 @@ function Header({ isAdmin, onAdminToggle }) {
           <span className="text-2xl">✂️</span>
           <h1 className="text-lg font-bold text-gray-800">Appointment Booking</h1>
         </div>
-        <button
-          onClick={onAdminToggle}
-          className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-        >
-          {isAdmin ? '← Client view' : 'Admin'}
-        </button>
+        <div className="flex items-center gap-3 text-xs">
+          {view === 'client' && (
+            <button
+              onClick={() => setView('admin')}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              Admin
+            </button>
+          )}
+          {(view === 'admin' || view === 'archive') && (
+            <>
+              {view === 'admin' ? (
+                <button
+                  onClick={() => setView('archive')}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  Archive
+                </button>
+              ) : (
+                <button
+                  onClick={() => setView('admin')}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  ← Admin
+                </button>
+              )}
+              <button
+                onClick={() => { sessionStorage.removeItem('admin'); setView('client') }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                ← Client view
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </header>
   )
 }
 
-function deleteExpiredSlots() {
-  const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-  return supabase.from('slots').delete().lt('slot_time', cutoff)
-}
-
 export default function App() {
-  useEffect(() => {
-    deleteExpiredSlots()
-    const interval = setInterval(deleteExpiredSlots, 60_000)
-    return () => clearInterval(interval)
-  }, [])
-
   const params = new URLSearchParams(window.location.search)
   const token = params.get('token')
+
+  const [view, setView] = useState(
+    params.get('admin') !== null || sessionStorage.getItem('admin') === '1' ? 'admin' : 'client'
+  )
 
   // Cancel flow — standalone page, no nav needed
   if (token) {
@@ -53,21 +75,13 @@ export default function App() {
     )
   }
 
-  const [isAdmin, setIsAdmin] = useState(
-    params.get('admin') !== null || sessionStorage.getItem('admin') === '1'
-  )
-
-  function toggleAdmin() {
-    const next = !isAdmin
-    if (!next) sessionStorage.removeItem('admin')
-    setIsAdmin(next)
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header isAdmin={isAdmin} onAdminToggle={toggleAdmin} />
+      <Header view={view} setView={setView} />
       <main className="max-w-3xl mx-auto px-4 py-8">
-        {isAdmin ? <AdminPage /> : <ClientPage />}
+        {view === 'admin'   && <AdminPage />}
+        {view === 'archive' && <ArchivePage />}
+        {view === 'client'  && <ClientPage />}
       </main>
     </div>
   )

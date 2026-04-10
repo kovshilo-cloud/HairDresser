@@ -24,9 +24,11 @@ export default function AdminSlotList({ refreshKey }) {
 
   const fetchSlots = useCallback(async () => {
     setLoading(true)
+    const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString()
     const { data } = await supabaseAdmin
       .from('slots')
       .select('*, bookings(id, client_name, client_phone, cancelled_at, created_at)')
+      .gte('slot_time', cutoff)
       .order('slot_time', { ascending: true })
     setSlots(data ?? [])
     setSelected(new Set())
