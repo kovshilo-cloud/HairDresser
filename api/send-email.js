@@ -1,17 +1,14 @@
-import { Resend } from 'resend'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).end()
-  }
+  if (req.method !== 'POST') return res.status(405).end()
 
-  const { to, clientName, slotTime, duration, cancelToken } = req.body
+  const { to, clientName, slotTime, duration, cancelToken } = req.body ?? {}
 
   if (!to || !clientName || !slotTime || !cancelToken) {
     return res.status(400).json({ error: 'Missing required fields' })
   }
+
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) return res.status(500).json({ error: 'RESEND_API_KEY not set' })
 
   const date = new Date(slotTime)
   const formattedDate = date.toLocaleDateString('en-US', {
@@ -24,9 +21,14 @@ export default async function handler(req, res) {
   const origin = req.headers.origin || `https://${req.headers.host}`
   const cancelUrl = `${origin}?token=${cancelToken}`
 
-  try {
-    await resend.emails.send({
-      from: process.env.RESEND_FROM ?? 'Appointment Booking <onboarding@resend.dev>',
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: process.env.RESEND_FROM ?? 'onboarding@resend.dev',
       to,
       subject: `Appointment confirmed – ${formattedDate}`,
       html: `
@@ -54,10 +56,14 @@ export default async function handler(req, res) {
           </p>
         </div>
       `,
-    })
-    return res.status(200).json({ ok: true })
-  } catch (err) {
-    console.error('Resend error:', err)
-    return res.status(500).json({ error: 'Failed to send email' })
+    }),
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    return res.status(500).json({ error: data.message ?? 'Resend API error' })
   }
+
+  return res.status(200).json({ ok: true })
 }
