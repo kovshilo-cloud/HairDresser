@@ -9,6 +9,7 @@ import BookingConfirmation from './BookingConfirmation'
 export default function BookingModal({ slot, onClose }) {
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [cancelToken, setCancelToken] = useState(null)
@@ -26,11 +27,28 @@ export default function BookingModal({ slot, onClose }) {
       .insert({ slot_id: slot.id, client_name: name.trim(), client_phone: phone.trim() })
       .select('cancel_token')
       .single()
-    setLoading(false)
     if (err) {
+      setLoading(false)
       setError('Could not book this slot. It may have just been taken.')
       return
     }
+
+    // Send confirmation email if provided — non-blocking
+    if (email.trim()) {
+      fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: email.trim(),
+          clientName: name.trim(),
+          slotTime: slot.slot_time,
+          duration: slot.duration,
+          cancelToken: data.cancel_token,
+        }),
+      }).catch(() => {}) // ignore email errors — booking already succeeded
+    }
+
+    setLoading(false)
     setCancelToken(data.cancel_token)
   }
 
@@ -65,6 +83,13 @@ export default function BookingModal({ slot, onClose }) {
           value={phone}
           onChange={e => setPhone(e.target.value)}
           required
+        />
+        <Input
+          label="Email (optional)"
+          type="email"
+          placeholder="anna@example.com"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
         />
         {error && <p className="text-sm text-red-500">{error}</p>}
         <Button type="submit" className="w-full" disabled={loading}>
