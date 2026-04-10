@@ -86,7 +86,8 @@ export default function App() {
       <Header view={view} setView={setView} />
       <main className="max-w-3xl mx-auto px-4 py-8">
         {view === 'admin'   && <AdminPage authed={authed} onLogin={handleLogin} />}
-        {view === 'archive' && <ArchivePage />}
+        {view === 'archive' && authed && <ArchivePage />}
+        {view === 'archive' && !authed && <AdminPage authed={false} onLogin={handleLogin} />}
         {view === 'client'  && <ClientPage />}
       </main>
     </div>
