@@ -33,19 +33,25 @@ export default function BookingModal({ slot, onClose }) {
       return
     }
 
-    // Send confirmation email if provided — non-blocking
+    // Send confirmation email if provided
     if (email.trim()) {
-      fetch('/api/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: email.trim(),
-          clientName: name.trim(),
-          slotTime: slot.slot_time,
-          duration: slot.duration,
-          cancelToken: data.cancel_token,
-        }),
-      }).catch(() => {}) // ignore email errors — booking already succeeded
+      try {
+        const res = await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: email.trim(),
+            clientName: name.trim(),
+            slotTime: slot.slot_time,
+            duration: slot.duration,
+            cancelToken: data.cancel_token,
+          }),
+        })
+        const json = await res.json()
+        if (!res.ok) console.error('Email API error:', json)
+      } catch (e) {
+        console.error('Email fetch failed:', e)
+      }
     }
 
     setLoading(false)
