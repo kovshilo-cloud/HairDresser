@@ -48,8 +48,12 @@ export default function BookingModal({ slot, onClose }) {
             cancelToken: data.cancel_token,
           }),
         })
-        const json = await res.json()
-        if (!res.ok) setEmailError(`Email error: ${json.error || res.status}`)
+        const text = await res.text()
+        if (!res.ok) {
+          let msg = text
+          try { msg = JSON.parse(text).error || text } catch {}
+          setEmailError(`Email error: ${msg}`)
+        }
       } catch (e) {
         setEmailError(`Email error: ${e.message}`)
       }
